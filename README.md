@@ -111,6 +111,7 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 ├── 7_Modeling/
 ├── 8_Dashboard/
 ├── .gitignore
+├── requirements.txt
 └── README.md
 ```
 
