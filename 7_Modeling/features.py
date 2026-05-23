@@ -50,8 +50,8 @@ def build_features(df):
         df["egarch_vol"].rolling(60).mean() + 1e-9
     )
 
-    # 서브인덱스 Lag 피처
-    for i in range(1, 8):
+    # 서브인덱스 Lag 피처 (sub_index1 제외 — 모멘텀은 mom5/mom20/mom60으로 대체)
+    for i in range(2, 8):
         df[f"sub_index{i}_lag1"] = df[f"sub_index{i}"].shift(1)
         df[f"sub_index{i}_lag2"] = df[f"sub_index{i}"].shift(2)
 

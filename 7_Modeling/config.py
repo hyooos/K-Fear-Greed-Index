@@ -19,7 +19,7 @@ TARGET_DAILY_VOL = CFG["target_vol_ann"] / np.sqrt(252)
 TREND_MAP = {0: 0.0, 1: 0.35, 2: 0.70, 3: 1.0}
 
 KFGI_FEATS_BASE = (
-    [f"sub_index{i}" for i in range(1, 8)]
+    [f"sub_index{i}" for i in range(2, 8)]
     + [
         "sent_norm_w", "sent_energy", "sent_std_inv",
         "neg_z_inv", "sent_composite", "sent_composite_ma10",
@@ -28,7 +28,7 @@ KFGI_FEATS_BASE = (
 )
 
 DIRECTION = {
-    **{f"sub_index{i}": 1 for i in range(1, 8)},
+    **{f"sub_index{i}": 1 for i in range(2, 8)},
     "sent_norm_w": 1, "sent_energy": 1, "sent_std_inv": 1,
     "neg_z_inv": 1, "sent_composite": 1, "sent_composite_ma10": 1,
     "egarch_vol": -1, "vol_regime_high": -1, "vol_ratio": -1,

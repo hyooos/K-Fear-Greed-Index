@@ -8,8 +8,8 @@ from matplotlib.patches import Patch
 from config import CFG
 
 FEATURES_LIST = (
-    [f"sub_index{i}_lag1" for i in range(1, 8)]
-    + [f"sub_index{i}_lag2" for i in range(1, 8)]
+    [f"sub_index{i}_lag1" for i in range(2, 8)]
+    + [f"sub_index{i}_lag2" for i in range(2, 8)]
     + [
         "sent_norm_w", "sent_energy", "sent_std_inv", "neg_z_inv",
         "sent_norm_ma5", "neg_z_ma5", "sent_norm_diff",
