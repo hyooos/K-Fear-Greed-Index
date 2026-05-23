@@ -19,7 +19,7 @@ def calc_dd(ret):
 
 
 def plot_main_results(df, main_df, trend_df, trendvol_df, df_ns, main_ns,
-                      rho_5d, kdir, save_path="kfgi_egarch_result_v4.png"):
+                      rho_5d, kdir, save_path="kfgi_egarch_result_v5.png"):
     dates      = df["date"]
     shock_mask = df["vol_shock"] > CFG["vol_shock_thr"]
     ref        = df["target_reg"]
@@ -40,14 +40,14 @@ def plot_main_results(df, main_df, trend_df, trendvol_df, df_ns, main_ns,
     ax1.plot(dates, np.exp(trendvol_df["strat_ret"].cumsum()),
              label="② 추세+vol^0.5", color="#F59E0B", lw=1.5, ls="--")
     ax1.plot(dates, np.exp(main_df["strat_ret"].cumsum()),
-             label=f"③ 메인 v4 (K-FGI {kdir})", color="#2563EB", lw=2.5)
+             label=f"③ 메인 v5 (K-FGI {kdir})", color="#2563EB", lw=2.5)
     ax1.plot(df_ns["date"], np.exp(main_ns["strat_ret"].cumsum()),
-             label="③ 메인 v4 (감성 제외)", color="#7C3AED",
+             label="③ 메인 v5 (감성 제외)", color="#7C3AED",
              lw=1.2, ls=":", alpha=0.7)
     ax1.fill_between(dates, 0.5, 4, where=shock_mask,
                      color="#FCA5A5", alpha=0.2, label="vol_shock 경보")
     ax1.set_title(
-        f"누적 수익률 v4  (K-FGI {kdir}, ρ(5d)={rho_5d:.3f}, 배율 0.5~1.6)",
+        f"누적 수익률 v5  (K-FGI {kdir}, ρ(5d)={rho_5d:.3f}, 배율 0.5~1.6)",
         fontsize=12, fontweight="bold",
     )
     ax1.legend(fontsize=8.5, loc="upper left")
@@ -58,7 +58,7 @@ def plot_main_results(df, main_df, trend_df, trendvol_df, df_ns, main_ns,
         (ref,                      "KOSPI",        "#9CA3AF", 0.40),
         (trend_df["strat_ret"],    "추세추종",      "#16A34A", 0.35),
         (trendvol_df["strat_ret"], "추세+vol^0.5", "#F59E0B", 0.35),
-        (main_df["strat_ret"],     "메인 v4",       "#2563EB", 0.50),
+        (main_df["strat_ret"],     "메인 v5",       "#2563EB", 0.50),
     ]:
         ax2.fill_between(dates, calc_dd(ret), color=col, alpha=alp, label=lbl)
     ax2.set_title("Drawdown 비교 (%)", fontsize=11)
@@ -92,13 +92,13 @@ def plot_main_results(df, main_df, trend_df, trendvol_df, df_ns, main_ns,
                      color="#BFDBFE", alpha=0.45, label="공포 구간")
     ax4.fill_between(dates, 0, 100, where=(kv > 75),
                      color="#FCA5A5", alpha=0.35, label="탐욕 구간")
-    ax4.set_title(f"K-FGI (순수 감성+변동성, {kdir}, 배율 0.5~1.6)", fontsize=11)
+    ax4.set_title(f"K-FGI (순수 감성+변동성, Ridge 무제약, {kdir}, 배율 0.5~1.6)", fontsize=11)
     ax4.set_ylim(0, 100)
     ax4.legend(fontsize=7.5)
     ax4.grid(alpha=0.2)
 
     # Panel 5 — 포지션 크기
-    ax5.plot(dates, main_df["weight"],    color="#2563EB", lw=0.9, label="메인 v4")
+    ax5.plot(dates, main_df["weight"],    color="#2563EB", lw=0.9, label="메인 v5")
     ax5.plot(dates, trend_df["weight"],   color="#16A34A", lw=0.9,
              alpha=0.7, label="추세추종", ls="-.")
     ax5.plot(df_ns["date"], main_ns["weight"], color="#7C3AED", lw=0.9,
@@ -110,7 +110,7 @@ def plot_main_results(df, main_df, trend_df, trendvol_df, df_ns, main_ns,
     ax5.grid(alpha=0.2)
 
     fig.suptitle(
-        f"K-FGI × EGARCH v4 — vol^0.5 | crisis 0.7 | K-FGI 0.5~1.6 | {kdir}",
+        f"K-FGI × EGARCH v5 — vol^0.5 | crisis 0.7 | K-FGI 0.5~1.6 | {kdir}",
         fontsize=13, fontweight="bold", y=1.01,
     )
     plt.savefig(save_path, dpi=150, bbox_inches="tight")

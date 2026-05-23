@@ -60,7 +60,7 @@ def run_lgbm_analysis(df, features, n_splits=CFG["n_splits"]):
     return pd.DataFrame({"date": dates_all, "pred_5d": preds_all}), last_lgbm
 
 
-def plot_feature_importance(lgbm_model, features, save_path="feature_importance_v4.png"):
+def plot_feature_importance(lgbm_model, features, save_path="feature_importance_v5.png"):
     imp = pd.DataFrame({
         "feature":    features,
         "importance": lgbm_model.feature_importance(importance_type="gain"),
