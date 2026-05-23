@@ -53,7 +53,6 @@ def build_features(df):
     # 서브인덱스 Lag 피처 (sub_index1 제외 — 모멘텀은 mom5/mom20/mom60으로 대체)
     for i in range(2, 8):
         df[f"sub_index{i}_lag1"] = df[f"sub_index{i}"].shift(1)
-        df[f"sub_index{i}_lag2"] = df[f"sub_index{i}"].shift(2)
 
     # EGARCH Lag 피처
     df["egarch_vol_lag1"]     = df["egarch_vol"].shift(1)
