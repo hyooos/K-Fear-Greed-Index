@@ -19,7 +19,7 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 - NAVER 금융 댓글 기반 감성 분석
 - EGARCH 기반 변동성 모델링
 - 감성 및 변동성 결합 K-FGI 지표 생성
-- Walk-forward기반 시계열 검증
+- Walk-forward 기반 시계열 검증
 - Downside Risk(MDD) 중심 리스크 관리 전략
 - 감성 피처 기여도 검증(Ablation Study) 
 
@@ -96,6 +96,7 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 - Crisis Regime에서 시장 대비 낮은 낙폭 기록
 - 감성 피처 제거 시 성과 저하 확인
 - 감성 + 변동성 결합 구조의 유효성 검증
+
 ---
 
 ## Directory Structure
@@ -142,7 +143,7 @@ streamlit run 8_Dashboard/streamlit_app.py
 
 본 연구는 NAVER 금융 댓글 기반 감성 분석과 EGARCH(1,1) 변동성 모델링을 결합하여 한국형 투자심리 지표인 K-FGI(K-Fear & Greed Index)를 제안했습니다.
 
-K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 5.8%p 감소시키며,하락장 방어 성능을 개선했습니다. 
-또한 감성 피처 제거 시 Sharpe Ratio와 MDD 성과가 악화되는 것을 통해 감성 정보가 실제 수익률 예측과 리스크 관리에 유의미한 상관관계가 있음을 확인했습니다.
+K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 5.8%p 감소시키며, 하락장 방어 성능을 개선했습니다. 
+또한 감성 피처 제거 시 Sharpe Ratio와 MDD 성과가 악화되는 것을 통해 감성 정보가 실제 수익률 예측과 리스크 관리 성과에 유의미하게 기여함을 확인했습니다.
 
 특히 Walk-forward 기반 검증 구조를 적용하여 Look-ahead Bias를 최소화하고, 시장 국면(Bull / Normal / Crisis)에 따라 포지션을 동적으로 조절하는 하방 리스크 중심 전략 프레임워크를 구축했다는 점에서 의의가 있습니다.
