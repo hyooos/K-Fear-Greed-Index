@@ -78,7 +78,7 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 
 ## Pipeline
 
-(사진)
+<img width="1218" height="464" alt="image" src="https://github.com/user-attachments/assets/3c6cc3da-1e76-4fd9-8782-74d5d450c072" />
 
 ---
 
