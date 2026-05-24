@@ -87,14 +87,15 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 | Strategy | Annual Return | Sharpe Ratio | MDD |
 |---|---:|---:|---:|
 | Buy & Hold | 17.97% | 0.942 | -20.67% |
-| K-FGI Strategy | **14.73%** | **1.035** | **-14.87%** |
+| K-FGI Strategy | **13.65%** | **0.984** | **-14.59%** |
 
 ### Main Findings
 
-- Buy & Hold 대비 MDD **5.80%p 개선**
+- Buy & Hold 대비 MDD **6.08%p 개선**
 - 하락 구간에서 손실 방어 성능 강화
-- Crisis Regime에서 시장 대비 낮은 낙폭 기록
-- 감성 피처 제거 시 성과 저하 확인
+- Crisis Regime에서 상대적으로 안정적인 방어 성과 확인
+- 감성 피처 제거 시 Sharpe Ratio(0.984 → 0.802) 감소
+- 감성 피처 제거 시 MDD(-14.59% → -17.57%) 악화
 - 감성 + 변동성 결합 구조의 유효성 검증
 
 ---
@@ -143,7 +144,7 @@ streamlit run 8_Dashboard/streamlit_app.py
 
 본 연구는 NAVER 금융 댓글 기반 감성 분석과 EGARCH(1,1) 변동성 모델링을 결합하여 한국형 투자심리 지표인 K-FGI(K-Fear & Greed Index)를 제안했습니다.
 
-K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 5.8%p 감소시키며, 하락장 방어 성능을 개선했습니다. 
+K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 6.08%p 감소시키며, 하락장 방어 성능을 개선했습니다. 
 또한 감성 피처 제거 시 Sharpe Ratio와 MDD 성과가 악화되는 것을 통해 감성 정보가 실제 수익률 예측과 리스크 관리 성과에 유의미하게 기여함을 확인했습니다.
 
 특히 Walk-forward 기반 검증 구조를 적용하여 Look-ahead Bias를 최소화하고, 시장 국면(Bull / Normal / Crisis)에 따라 포지션을 동적으로 조절하는 하방 리스크 중심 전략 프레임워크를 구축했다는 점에서 의의가 있습니다.
