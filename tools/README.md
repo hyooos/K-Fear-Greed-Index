@@ -48,7 +48,3 @@
 | --- | --- |
 | `create_paper_figures.py` | 이전 버전 논문 그림 생성 |
 | `redraw_readable_figures.py` | 이전 그림을 더 읽기 쉬운 형태로 다시 그림 |
-
-## GitHub 업로드 기준
-
-이 폴더의 스크립트는 GitHub에 포함하는 것이 좋다. 최종 표와 그림이 어떻게 생성되었는지 설명해주기 때문이다. 단, raw data, 크롤링 로그, 로컬 cache, 비공개 원자료는 업로드하지 않는다.
