@@ -24,6 +24,7 @@ ENV/
 cache/
 _local_archive_ignored/
 paper_outputs/
+docs/
 
 # Large local data. Keep raw/recollected data outside GitHub.
 data/
@@ -38,7 +39,3 @@ feature_importance_v*.png
 kfgi_egarch_result_v*.png
 modeling_v*.py
 requirements_backup.txt
-
-# Keep documentation in GitHub.
-!docs/
-!docs/**

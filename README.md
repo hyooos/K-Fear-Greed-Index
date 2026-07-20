@@ -137,7 +137,6 @@ vol_ratio
 ├── 6_KFGI_weight/            # K-FGI 가중치 산출 및 초기 실험
 ├── 7_Modeling/               # EGARCH, K-FGI 전략, 성과 평가
 ├── 8_Dashboard/              # Streamlit 기반 시각화 대시보드
-├── docs/                     # 재현성, 실험 결과, 논문 정리 문서
 ├── tools/                    # 최종 실험 및 논문용 산출물 생성 스크립트
 ├── .gitignore                # Git 업로드 제외 파일 설정
 ├── environment.yml           # Conda 환경 설정
