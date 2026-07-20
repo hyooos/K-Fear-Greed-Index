@@ -1,5 +1,3 @@
-
-
 ## 📉 K-Fear & Greed Index (K-FGI)
 
 ### A Downside Risk Management Framework Using a Sentiment-Volatility Integrated Index
