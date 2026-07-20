@@ -145,8 +145,6 @@ vol_ratio
 └── README.md                 # 프로젝트 소개 문서
 ```
 
-`paper_outputs/` 폴더는 논문용 표와 그림을 생성하는 로컬 산출물 폴더이며, GitHub 업로드 대상에서 제외했습니다.
-
 ---
 
 ## Run
