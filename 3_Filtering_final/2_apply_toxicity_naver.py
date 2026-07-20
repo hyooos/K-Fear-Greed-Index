@@ -1,151 +1,222 @@
-# apply_toxicity_navert.py
+import argparse
+import json
 import os
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import pandas as pd
 import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from tqdm import tqdm
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 
-# ========== 경로 설정 ==========
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__)))
-INPUT_DIR  = BASE_DIR / "political_filter"   # 1단계 결과 폴더
-OUTPUT_DIR = BASE_DIR / "toxicity_filter"    # 2단계 결과 저장 폴더
-OUTPUT_DIR.mkdir(exist_ok=True)
-
-YEARS = [2023, 2024, 2025]
-
-MODEL_NAME  = "jinkyeongk/kcELECTRA-toxic-detector"
-BATCH_SIZE  = 32
-MAX_LENGTH  = 256
-MODE        = "weight"   # "drop" or "weight"
-TAU         = 0.90       # drop 모드 기준
-GAMMA       = 2.0        # weight 모드 감쇠
-HARD_TAU    = 0.95       # weight 모드 hard drop 기준
+MODEL_NAME = "jinkyeongk/kcELECTRA-toxic-detector"
 
 
-# ========== 독성 점수 계산 ==========
+def parse_years(value: str) -> list[int]:
+    years: list[int] = []
+    for part in value.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            start, end = part.split("-", 1)
+            years.extend(range(int(start), int(end) + 1))
+        else:
+            years.append(int(part))
+    return sorted(set(years))
+
+
+def default_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 @torch.no_grad()
 def predict_toxicity_binary(
-    texts: List[str],
-    model_name: str,
-    batch_size: int = 32,
-    max_length: int = 256,
-    device: Optional[str] = None,
-) -> List[float]:
-    if device is None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-    model = AutoModelForSequenceClassification.from_pretrained(model_name)
-    model.to(device).eval()
-
-    scores: List[float] = []
+    texts: list[str],
+    tokenizer,
+    model,
+    *,
+    batch_size: int,
+    max_length: int,
+    device: str,
+) -> list[float]:
+    scores: list[float] = []
     for i in tqdm(range(0, len(texts), batch_size), desc="Scoring toxicity"):
         batch = texts[i : i + batch_size]
-        enc = tokenizer(batch, truncation=True, padding=True,
-                        max_length=max_length, return_tensors="pt")
+        enc = tokenizer(
+            batch,
+            truncation=True,
+            padding=True,
+            max_length=max_length,
+            return_tensors="pt",
+        )
         enc = {k: v.to(device) for k, v in enc.items()}
         logits = model(**enc).logits
         if logits.shape[-1] == 1:
-            p = torch.sigmoid(logits).squeeze(-1)
+            probs = torch.sigmoid(logits).squeeze(-1)
         else:
-            probs = torch.softmax(logits, dim=-1)
-            p = probs[:, 1]
-        scores.extend(p.detach().cpu().tolist())
+            probs = torch.softmax(logits, dim=-1)[:, 1]
+        scores.extend(probs.detach().cpu().tolist())
     return scores
 
 
-def summarize_thresholds(df, mode, tau, hard_tau):
+def summarize(df: pd.DataFrame, mode: str, tau: float, hard_tau: float, gamma: float) -> dict:
     total = len(df)
     empty = int(df["is_empty"].sum())
-    print("\n==================== SUMMARY ====================")
-    print(f"total rows: {total} | empty: {empty} | non-empty: {total - empty}")
-    print(f"mode: {mode}")
-    if mode == "drop":
-        print(f"drop rule: empty OR toxicity >= {tau}")
-        print(f"kept: {int(df['keep'].sum())} | dropped: {int((~df['keep']).sum())}")
-    else:
-        print(f"weight=(1-tox)^{GAMMA}, hard_drop >= {hard_tau}")
-        print(f"hard dropped: {int((~df['keep']).sum())}")
-    print("=================================================\n")
+    kept = int(df["keep"].sum())
+    dropped = int((~df["keep"]).sum())
+    return {
+        "total_rows": total,
+        "empty_rows": empty,
+        "non_empty_rows": total - empty,
+        "mode": mode,
+        "tau": tau,
+        "hard_tau": hard_tau,
+        "gamma": gamma,
+        "kept": kept,
+        "dropped": dropped,
+        "mean_toxicity": float(df.loc[~df["is_empty"], "toxicity_score"].mean()) if total - empty else 0.0,
+    }
 
 
-def print_bins(df):
-    bins   = [0.0, 0.2, 0.4, 0.6, 0.8, 0.9, 0.95, 1.0]
-    labels = ["[0,.2)","[.2,.4)","[.4,.6)","[.6,.8)","[.8,.9)","[.9,.95)","[.95,1]"]
-    tmp = df[~df["is_empty"]].copy()
-    if len(tmp) == 0:
-        return
-    tmp["tox_bin"] = pd.cut(tmp["toxicity_score"], bins=bins, labels=labels,
-                            include_lowest=True, right=False)
-    g = tmp.groupby("tox_bin", dropna=False).agg(
-        n=("toxicity_score", "size"),
-        mean_tox=("toxicity_score", "mean"),
-        mean_weight=("weight", "mean"),
-        kept=("keep", "sum"),
-    ).reset_index()
-    print("\n[TOXICITY BINS]")
-    print(g.to_string(index=False))
+def run_year(
+    year: int,
+    input_dir: Path,
+    output_dir: Path,
+    tokenizer,
+    model,
+    *,
+    batch_size: int,
+    max_length: int,
+    mode: str,
+    tau: float,
+    gamma: float,
+    hard_tau: float,
+    device: str,
+    overwrite: bool,
+) -> Optional[dict]:
+    print(f"\n{'=' * 80}")
+    print(f"{year}년 독성 필터링")
+    print(f"{'=' * 80}")
 
-
-# ========== 연도별 실행 ==========
-for year in YEARS:
-    print(f"\n{'='*80}")
-    print(f"{year}년 독성 필터링 시작...")
-    print(f"{'='*80}")
-
-    inp = INPUT_DIR / f"comments_political_removed_{year}.csv"
+    inp = input_dir / f"comments_political_removed_{year}.csv"
+    kept_path = output_dir / f"comments_toxicity_kept_{year}.csv"
+    if kept_path.exists() and not overwrite:
+        print(f"이미 있음, 건너뜀: {kept_path}")
+        return None
     if not inp.exists():
-        print(f"  ⚠️  파일 없음, 건너뜀: {inp}")
-        continue
+        print(f"파일 없음, 건너뜀: {inp}")
+        return None
 
     df = pd.read_csv(inp)
     print(f"로드 완료: {len(df):,}행")
-
-    # 빈 텍스트 처리
     df["text_raw"] = df["text_raw"].fillna("").astype(str)
     df["is_empty"] = df["text_raw"].str.strip().eq("")
 
-    # 독성 점수 계산 (비어있지 않은 것만)
-    idx   = df.index[~df["is_empty"]].tolist()
+    idx = df.index[~df["is_empty"]].tolist()
     texts = df.loc[idx, "text_raw"].tolist()
     df["toxicity_score"] = 0.0
-    if len(texts) > 0:
-        scores = predict_toxicity_binary(texts, MODEL_NAME, BATCH_SIZE, MAX_LENGTH)
+    if texts:
+        scores = predict_toxicity_binary(
+            texts,
+            tokenizer,
+            model,
+            batch_size=batch_size,
+            max_length=max_length,
+            device=device,
+        )
         df.loc[idx, "toxicity_score"] = scores
     df["toxicity_score"] = df["toxicity_score"].fillna(0.0).clip(0.0, 1.0)
 
-    # weight / keep 계산
-    if MODE == "drop":
+    if mode == "drop":
         df["weight"] = 1.0
-        df["keep"]   = (~df["is_empty"]) & (df["toxicity_score"] < TAU)
+        df["keep"] = (~df["is_empty"]) & (df["toxicity_score"] < tau)
     else:
-        df["weight"] = (1.0 - df["toxicity_score"]).clip(lower=0.0) ** GAMMA
-        df["keep"]   = (~df["is_empty"]) & (df["toxicity_score"] < HARD_TAU)
+        df["weight"] = (1.0 - df["toxicity_score"]).clip(lower=0.0) ** gamma
+        df["keep"] = (~df["is_empty"]) & (df["toxicity_score"] < hard_tau)
         df.loc[df["is_empty"], "weight"] = 0.0
 
-    # 저장
-    df.to_csv(OUTPUT_DIR / f"comments_toxicity_all_{year}.csv",
-              index=False, encoding="utf-8-sig")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    df.to_csv(output_dir / f"comments_toxicity_all_{year}.csv", index=False, encoding="utf-8-sig")
+    df[df["keep"]].copy().to_csv(kept_path, index=False, encoding="utf-8-sig")
+    df[~df["keep"]].copy().to_csv(
+        output_dir / f"comments_toxicity_dropped_{year}.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
 
-    kept_df    = df[df["keep"]].copy()
-    dropped_df = df[~df["keep"]].copy()
+    summary = summarize(df, mode, tau, hard_tau, gamma)
+    summary["year"] = year
+    with open(output_dir / f"toxicity_summary_{year}.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, ensure_ascii=False, indent=2)
 
-    kept_df.to_csv(OUTPUT_DIR / f"comments_toxicity_kept_{year}.csv",
-                   index=False, encoding="utf-8-sig")
-    dropped_df.to_csv(OUTPUT_DIR / f"comments_toxicity_dropped_{year}.csv",
-                      index=False, encoding="utf-8-sig")
+    print(f"kept: {summary['kept']:,}행")
+    print(f"dropped: {summary['dropped']:,}행")
+    print(f"저장 완료: {kept_path}")
+    return summary
 
-    print(f"✓ kept:    {len(kept_df):,}행  →  comments_toxicity_kept_{year}.csv")
-    print(f"✓ dropped: {len(dropped_df):,}행  →  comments_toxicity_dropped_{year}.csv")
 
-    summarize_thresholds(df, MODE, TAU, HARD_TAU)
-    print_bins(df)
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Step 2: apply toxicity filter.")
+    parser.add_argument("--years", default="2014-2025")
+    parser.add_argument("--input-dir", default=str(BASE_DIR / "political_filter"))
+    parser.add_argument("--output-dir", default=str(BASE_DIR / "toxicity_filter"))
+    parser.add_argument("--model-name", default=MODEL_NAME)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--max-length", type=int, default=256)
+    parser.add_argument("--mode", choices=["drop", "weight"], default="weight")
+    parser.add_argument("--tau", type=float, default=0.90)
+    parser.add_argument("--gamma", type=float, default=2.0)
+    parser.add_argument("--hard-tau", type=float, default=0.95)
+    parser.add_argument("--device", default=None)
+    parser.add_argument("--overwrite", action="store_true")
+    args = parser.parse_args()
 
-print(f"\n{'='*80}")
-print("전체 완료! toxicity_filter/ 폴더 확인하세요")
-print("⭐ 다음 단계 입력 파일: comments_toxicity_kept_2023/2024/2025.csv")
-print(f"{'='*80}")
+    device = args.device or default_device()
+    print("=" * 80)
+    print("2단계: 독성 필터링")
+    print(f"model: {args.model_name}")
+    print(f"device: {device}")
+    print("=" * 80)
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
+    model = AutoModelForSequenceClassification.from_pretrained(args.model_name)
+    model.to(device).eval()
+
+    output_dir = Path(args.output_dir)
+    summaries = []
+    for year in parse_years(args.years):
+        summary = run_year(
+            year,
+            Path(args.input_dir),
+            output_dir,
+            tokenizer,
+            model,
+            batch_size=args.batch_size,
+            max_length=args.max_length,
+            mode=args.mode,
+            tau=args.tau,
+            gamma=args.gamma,
+            hard_tau=args.hard_tau,
+            device=device,
+            overwrite=args.overwrite,
+        )
+        if summary:
+            summaries.append(summary)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_dir / "toxicity_summary_all.json", "w", encoding="utf-8") as f:
+        json.dump(summaries, f, ensure_ascii=False, indent=2)
+
+    print("\n전체 완료")
+    print(f"다음 단계 입력 폴더: {output_dir}")
+
+
+if __name__ == "__main__":
+    main()

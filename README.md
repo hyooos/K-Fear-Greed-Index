@@ -1,25 +1,28 @@
 ## 📉 K-Fear & Greed Index (K-FGI)
 
 ### A Downside Risk Management Framework Using a Sentiment-Volatility Integrated Index
-> 감성 및 변동성 결합 지표(K-FGI)를 활용한 주식시장 리스크 관리 전략 연구
+> 감성 및 변동성 결합 지표(K-FGI)를 활용한 주식시장 하방위험 관리 전략 연구
 
 ---
 
 ## Overview
 
-본 프로젝트는 NAVER 금융 댓글 기반 감성 분석과 EGARCH(1,1) 변동성 모델링을 결합하여 한국형 투자심리 지표인 **K-Fear & Greed Index (K-FGI)** 를 구축한 프로젝트입니다.
-K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션을 조절하는 리스크 관리 전략을 설계했습니다.
+본 프로젝트는 NAVER 금융 댓글 기반 감성 분석, KRX 시장 하위지표, EGARCH(1,1) 변동성 모델링을 결합하여 한국형 투자심리 지표인 **K-Fear & Greed Index (K-FGI)** 를 구축한 프로젝트입니다.
+
+K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션을 조절하고, 시장 하락 구간에서 최대 낙폭(MDD)을 줄이는 리스크 관리 전략을 설계했습니다.
 
 ---
 
 ## Key Features
 
 - NAVER 금융 댓글 기반 감성 분석
-- EGARCH 기반 변동성 모델링
+- KRX 기반 시장 하위지표 구성
+- EGARCH 기반 조건부 변동성 모델링
 - 감성 및 변동성 결합 K-FGI 지표 생성
 - Walk-forward 기반 시계열 검증
 - Downside Risk(MDD) 중심 리스크 관리 전략
-- 감성 피처 기여도 검증(Ablation Study) 
+- 감성 피처 및 모멘텀 피처 강건성 검정
+- Circuit Breaker Overlay를 활용한 극단 하락 구간 대응
 
 ---
 
@@ -80,21 +83,45 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 
 ---
 
+## Final Model
+
+최종 K-FGI는 기존 하위지표와 감성, 변동성 피처를 모두 사용하는 방식에서 출발했지만, 최종 실험에서는 과적합 가능성을 줄이기 위해 lean feature set을 사용했습니다.
+
+```text
+sub_index2
+sub_index3
+sub_index4
+sub_index5
+sub_index6
+sub_index7
+sent_composite_ma10
+egarch_vol
+vol_regime_high
+vol_ratio
+```
+
+`sub_index1`은 모멘텀 성격이 강해 원자료 및 강건성 검정에는 남기되, 최종 K-FGI 점수 계산에서는 제외했습니다.
+
+---
+
 ## Results
 
-| Strategy | Annual Return | Sharpe Ratio | MDD |
-|---|---:|---:|---:|
-| Buy & Hold | 17.97% | 0.942 | -20.67% |
-| K-FGI Strategy | **13.65%** | **0.984** | **-14.59%** |
+| Metric | Buy & Hold | K-FGI Strategy |
+|---|---:|---:|
+| MDD | -41.2% | **-26.6%** |
+| MDD Improvement | - | **+14.6%p** |
+| Average Exposure | 1.00x | **0.55x** |
+| Max Exposure | 1.00x | **1.00x** |
+| Volatility Reduction | - | **40.3%** |
 
 ### Main Findings
 
-- Buy & Hold 대비 MDD **6.08%p 개선**
-- 하락 구간에서 손실 방어 성능 강화
-- Crisis Regime에서 상대적으로 안정적인 방어 성과 확인
-- 감성 피처 제거 시 Sharpe Ratio(0.984 → 0.802) 감소
-- 감성 피처 제거 시 MDD(-14.59% → -17.57%) 악화
-- 감성 + 변동성 결합 구조의 유효성 검증
+- Buy & Hold 대비 MDD **14.6%p 개선**
+- 시장 하락일 평균 **43.1 bp/day** 방어 효과 확인
+- 하락일 방어 Hit Rate **68.1%**
+- 평균 시장 노출도 **0.55x**로 감소
+- 연환산 변동성 **40.3% 감소**
+- 감성 + 변동성 결합 구조가 하방 리스크 관리에 유효함을 확인
 
 ---
 
@@ -102,18 +129,23 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 
 ```bash
 .
-├── 1_KFGI_subindex/
-├── 2_Naver_crawling/
-├── 3_Filtering_final/
-├── 4_Sentiment_analysis/
-├── 5_Merge_to_final_csv/
-├── 6_KFGI_weight/
-├── 7_Modeling/
-├── 8_Dashboard/
-├── .gitignore
-├── requirements.txt
-└── README.md
+├── 1_KFGI_subindex/          # KRX 기반 시장 하위지표 생성
+├── 2_Naver_crawling/         # NAVER 금융 기사 및 댓글 수집
+├── 3_Filtering_final/        # 정치/독성 댓글 필터링
+├── 4_Sentiment_analysis/     # 댓글 감성 분석 및 감성 피처 생성
+├── 5_Merge_to_final_csv/     # 하위지표, 감성, 시장 데이터 병합
+├── 6_KFGI_weight/            # K-FGI 가중치 산출 및 초기 실험
+├── 7_Modeling/               # EGARCH, K-FGI 전략, 성과 평가
+├── 8_Dashboard/              # Streamlit 기반 시각화 대시보드
+├── docs/                     # 재현성, 실험 결과, 논문 정리 문서
+├── tools/                    # 최종 실험 및 논문용 산출물 생성 스크립트
+├── .gitignore                # Git 업로드 제외 파일 설정
+├── environment.yml           # Conda 환경 설정
+├── requirements.txt          # Python 패키지 의존성
+└── README.md                 # 프로젝트 소개 문서
 ```
+
+`paper_outputs/` 폴더는 논문용 표와 그림을 생성하는 로컬 산출물 폴더이며, GitHub 업로드 대상에서 제외했습니다.
 
 ---
 
@@ -126,6 +158,14 @@ git clone https://github.com/your-repository.git
 
 cd your-repository
 
+conda env create -f environment.yml
+
+conda activate kfgi
+```
+
+이미 환경이 있는 경우:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -136,13 +176,19 @@ pip install -r requirements.txt
 ```bash
 streamlit run 8_Dashboard/streamlit_app.py
 ```
+
 ---
 
 ## Conclusion
 
 본 연구는 NAVER 금융 댓글 기반 감성 분석과 EGARCH(1,1) 변동성 모델링을 결합하여 한국형 투자심리 지표인 K-FGI(K-Fear & Greed Index)를 제안했습니다.
 
-K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 6.08%p 감소시키며, 하락장 방어 성능을 개선했습니다. 
-또한 감성 피처 제거 시 Sharpe Ratio와 MDD 성과가 악화되는 것을 통해 감성 정보가 실제 수익률 예측과 리스크 관리 성과에 유의미하게 기여함을 확인했습니다.
+K-FGI 기반 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 약 **14.6%p** 감소시키며, 하락장 방어 성능을 개선했습니다.
 
 특히 Walk-forward 기반 검증 구조를 적용하여 Look-ahead Bias를 최소화하고, 시장 국면(Bull / Normal / Crisis)에 따라 포지션을 동적으로 조절하는 하방 리스크 중심 전략 프레임워크를 구축했다는 점에서 의의가 있습니다.
+
+---
+
+## Notice
+
+본 저장소는 학술 연구 및 프로젝트 정리를 위한 코드 저장소이며, 투자 조언이 아닙니다.

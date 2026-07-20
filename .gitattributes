@@ -1,0 +1,7 @@
+*.csv text working-tree-encoding=UTF-8
+*.md text working-tree-encoding=UTF-8
+*.py text working-tree-encoding=UTF-8
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.pdf binary

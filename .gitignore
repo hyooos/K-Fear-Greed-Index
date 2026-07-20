@@ -1,1 +1,44 @@
+# macOS / editor
 .DS_Store
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local caches and logs
+*.log
+*.tmp
+*.cache
+cache/
+_local_archive_ignored/
+paper_outputs/
+
+# Large local data. Keep raw/recollected data outside GitHub.
+data/
+3_Filtering_final/recollect_*/
+4_Sentiment_analysis/recollect_*/
+2_Naver_crawling/NAVER_*/
+
+# Local/generated legacy artifacts
+KFG_final_2.csv
+8_Dashboard/KFG_final_2.csv
+feature_importance_v*.png
+kfgi_egarch_result_v*.png
+modeling_v*.py
+requirements_backup.txt
+
+# Keep documentation in GitHub.
+!docs/
+!docs/**
