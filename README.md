@@ -125,6 +125,19 @@ vol_ratio
 
 ---
 
+## Leak-free Re-experiments
+
+`9_Leakfree_experiments/`에서는 학습 라벨·표준화·EGARCH 추정이 결정 시점 이후 정보를 쓰지 않도록 파이프라인을 다시 구성하고, 거래 시점을 s+2일(단일 지연)로 조정해 재실험했습니다.
+
+- 개발 구간(2016-01-06 ~ 2023-06-30)에서만 설정을 선택하고, 봉인 구간(2023-07-01 ~ 2025-12-22)은 한 번만 평가
+- 편도 거래비용 3bp, 총 482개 설정 시도
+- 누수를 제거하면 성과가 낮아지며, 어떤 설정도 같은 노출의 정적 전략을 통계적으로 유의하게 이기지 못함
+- K-FGI 구성 요소 중 감성 피처가 가장 일관되게 유용했고, 목표 변수를 수익률에서 변동성으로 바꾸면 성과가 개선됨
+
+자세한 결과는 [`9_Leakfree_experiments/README.md`](9_Leakfree_experiments/README.md)를 참고하세요.
+
+---
+
 ## Directory Structure
 
 ```bash
@@ -132,11 +145,13 @@ vol_ratio
 ├── 1_KFGI_subindex/          # KRX 기반 시장 하위지표 생성
 ├── 2_Naver_crawling/         # NAVER 금융 기사 및 댓글 수집
 ├── 3_Filtering_final/        # 정치/독성 댓글 필터링
+│   └── param_experiments/    # 필터링 파라미터 및 하위 전략 민감도 실험
 ├── 4_Sentiment_analysis/     # 댓글 감성 분석 및 감성 피처 생성
 ├── 5_Merge_to_final_csv/     # 하위지표, 감성, 시장 데이터 병합
 ├── 6_KFGI_weight/            # K-FGI 가중치 산출 및 초기 실험
 ├── 7_Modeling/               # EGARCH, K-FGI 전략, 성과 평가
 ├── 8_Dashboard/              # Streamlit 기반 시각화 대시보드
+├── 9_Leakfree_experiments/   # 정보 누수를 제거한 재실험 (개발/봉인 구간 분리)
 ├── tools/                    # 최종 실험 및 논문용 산출물 생성 스크립트
 ├── .gitignore                # Git 업로드 제외 파일 설정
 ├── environment.yml           # Conda 환경 설정
@@ -151,9 +166,9 @@ vol_ratio
 ### Installation
 
 ```bash
-git clone https://github.com/your-repository.git
+git clone https://github.com/hyooos/K-Fear-Greed-Index.git
 
-cd your-repository
+cd K-Fear-Greed-Index
 
 conda env create -f environment.yml
 
