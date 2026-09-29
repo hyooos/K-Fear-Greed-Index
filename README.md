@@ -79,7 +79,7 @@ K-FGI를 활용하여 시장 국면(Bull / Normal / Crisis)에 따라 포지션�
 
 ## Pipeline
 
-<img width="1071" height="409" alt="image" src="https://github.com/user-attachments/assets/82221098-5b66-4153-a491-349d6bcb961a" />
+(수정 예정)
 
 ---
 
@@ -186,7 +186,7 @@ streamlit run 8_Dashboard/streamlit_app.py
 
 K-FGI를 노출 조절에 적용한 전략은 Buy & Hold 대비 최대 낙폭(MDD)을 -41.19%에서 **-20.55%**로 줄이고, Sharpe 지수를 0.507에서 **0.679**로 높였습니다. 평균 노출이 0.528배로 낮아 개선의 일부는 노출 축소에서 나오며, 같은 노출의 정적 전략과의 Sharpe·MDD 차이는 통계적으로 확인되지 않았습니다.
 
-K-FGI는 수익률 예측 모델이 아니라 시장의 위험 상태를 요약하는 지표로, 감성 피처는 거래를 줄이고 낙폭을 얕게 하는 데 기여했습니다.
+K-FGI는 수익률 예측 모델이 아니라 시장의 위험 상태를 요약하는 지표로, 감성 피처는 거래를 줄이고 낙폭을 얕게 하도록 설계되었습니다.
 
 ---
 
